@@ -1,0 +1,164 @@
+#!/usr/bin/env node
+// vim: filetype=javascript expandtab softtabstop=4
+/*
+ * node.js script to split a given GeoJSON file into smaller groups, rather
+ * than a single huge file.
+ *
+ * Usage:
+ *   geojsplit [-a suffix_length] [-l geometry_count] filename
+ *  
+ * Options:
+ *   -a suffix_length
+ *      Use suffix_length letters to form the suffix of the file name.
+ *
+ *   -l geometry_count
+ *      Create smaller files n geometry objects in length
+ *
+ * License:
+ *   Copyright (c) 2013, Brandon Wood and Geometeor, LLC
+ *   All rights reserved. 
+ *   
+ *   Redistribution and use in source and binary forms, with or without 
+ *   modification, are permitted provided that the following conditions 
+ *   are met: 
+ *   
+ *    * Redistributions of source code must retain the above copyright 
+ *      notice, this list of conditions and the following disclaimer. 
+ *    * Redistributions in binary form must reproduce the above copyright 
+ *      notice, this list of conditions and the following disclaimer in 
+ *      the documentation and/or other materials provided with the 
+ *      distribution. 
+ *   
+ *   THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' 
+ *   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ *   THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
+ *   PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR 
+ *   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+ *   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+ *   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+ *   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY 
+ *   OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ *   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+ */
+var _version = "0.0.1",
+    _author = "Brandon Wood <btwood@geometeor.com>";
+
+var fs = require("fs"),
+    opt = require("optimist"),
+    path = require("path"),
+    jss = require("JSONStream");
+
+var argv = opt
+    .usage("Usage: geojsplit [-a suffix_length] [-l geometry_count] filename\n\n"
+        + "Version: " + _version + "\n\n"
+        + "Similar to UNIX split, geojsplit splits up a GeoJSON file into smaller\n"
+        + "GeoJSON files. Unlike UNIX split, files cannot simply be concatonated\n"
+        + "back again.")
+    .options("a", {
+        alias: "suffix-length",
+        describe: "number of characters in the suffix length for split file names",
+        default: 4,
+    })
+    .options("l", {
+        alias: "geometry-count",
+        describe: "number of geometries per split file",
+        default: 10,
+    })
+    .options("help", {
+        alias: "h",
+        describe: "display this message",
+        type: "boolean",
+        default: false,
+    })
+    .options("v", {
+        alias: "verbose",
+        describe: "verbose output",
+        type: "boolean",
+        default: false,
+    })
+    .check(function(argv) {
+        if (!!argv.help) return;
+        if (!argv._.length) throw new Error("input GeoJSON file required");
+    })
+    .argv;
+
+if (argv.help) return opt.showHelp();
+
+function pad(n, width) {
+    var alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
+
+    nf = +n;
+    width = +width;
+
+    if (n >= Math.pow(alphabet.length, width))
+        throw new Error("not enough suffix length, try increasing it");
+
+    var ns = [], np, ni, nf;
+
+    for (var i = width; i > 0; i--) {
+        np = Math.pow(alphabet.length, i - 1);
+        ni = Math.floor(nf / np);
+        nf -= ni * np;
+        ns.push(alphabet[ni]);
+    }   
+    
+    return ns.join("");
+}
+
+function qualify(file) {
+    var i = file.indexOf("=");
+    return {
+        name: i >= 0 ? file.substring(0, i) : path.basename(file, path.extname(file)),
+        path: i >= 0 ? file.substring(i + 1) : file
+    };
+}
+
+function inputGeoJSON(filename) {
+    var file = qualify(filename);
+
+    var stream = fs.createReadStream(file.path, {flags: "r", encoding: "utf8"}),
+        jsonStream = jss.parse("features.*");
+
+    var fileCount = 0,
+        geometries = [],
+        geometryCount = 0;
+
+    /* stream handler, parser, splitter */
+    jsonStream.on('data', 
+        function(data) {
+            if (geometryCount < argv.l) {
+                geometries.push(data);
+                geometryCount++;
+            } else {
+                outputGeoJSON(geometries, file, fileCount);
+                fileCount++;
+                geometries = [data];
+                geometryCount = 0;
+            }
+        }
+    );
+
+    stream.pipe(jsonStream);
+}
+
+function outputGeoJSON(geometries, file, fileCount) {
+    filename = file.name + "_x" + pad(fileCount, argv.a) + ".geojson";
+    
+    outputGeoJSONContent = {
+        "type": "FeatureCollection",
+        "features": geometries
+    }
+
+    fs.writeFile(filename, JSON.stringify(outputGeoJSONContent, "utf8", 4), 
+        function(err) {
+            if (err) throw new Error("error writing " + filename + ", " + err);
+            else if (!!argv.v) console.log("wrote file " + filename);
+        }
+    );
+}
+
+argv._.forEach(function(filename) {
+    if(!!argv.v) console.log("parsing file " + filename);
+    inputGeoJSON(filename);
+});

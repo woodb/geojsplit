@@ -1,0 +1,22 @@
+{
+    "name": "geojsplit",
+    "version": "0.0.1",
+    "description": "Splits GeoJSON FeatureCollections to smaller files",
+    "license": "BSD",
+    "author": {
+        "name": "Brandon Wood",
+        "email": "btwood@geometeor.com",
+        "url": "http://geometeor.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/geometeor/geojsplit.git"
+    },
+    "dependencies": {
+        "optimist": "0.3",
+        "JSONStream": "0.7"
+    },
+    "bin": {
+        "geojsplit": "./bin/geojsplit"
+    }
+}
