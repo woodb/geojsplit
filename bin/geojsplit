@@ -47,7 +47,8 @@ var _version = "0.0.2",
 var fs = require("fs"),
     opt = require("optimist"),
     path = require("path"),
-    jss = require("JSONStream");
+    jss = require("JSONStream"),
+    _   = require("lodash");
 
 var argv = opt
     .usage("Usage: geojsplit [-a suffix_length] [-l geometry_count] filename\n\n"
@@ -76,6 +77,16 @@ var argv = opt
         describe: "verbose output",
         type: "boolean",
         default: false,
+    })
+    .options("o", {
+        alias: "output-directory",
+        describe: "output directory",
+        type: "string"
+    })
+    .options("k", {
+        alias: "key",
+        describe: "split by key [property name properties]",
+        type: "string"
     })
     .check(function(argv) {
         if (!!argv.help) return;
@@ -113,9 +124,21 @@ function qualify(file) {
 
 function inputGeoJSON(filename) {
     var file = qualify(filename);
+    var geographyCache = {};
 
     var stream = fs.createReadStream(file.path, {flags: "r", encoding: "utf8"}),
         jsonStream = jss.parse("features.*");
+
+    if (argv.k) {
+        // set up end stream handler to write out the files
+        jsonStream.on('end', function () {
+            _.each(geographyCache, function (v, k) {
+                outputGeoJSON(v, {
+                    name: k
+                }, 0);
+            });
+        });
+    }
 
     var fileCount = 0,
         geometries = [],
@@ -124,14 +147,24 @@ function inputGeoJSON(filename) {
     /* stream handler, parser, splitter */
     jsonStream.on('data', 
         function(data) {
-            if (geometryCount < argv.l) {
-                geometries.push(data);
-                geometryCount++;
-            } else {
-                outputGeoJSON(geometries, file, fileCount);
-                fileCount++;
-                geometries = [data];
-                geometryCount = 0;
+            if (argv.k) {
+                if (data && data.properties && data.properties[argv.k]) {
+                    if (!geographyCache[data.properties[argv.k]]) {
+                        geographyCache[data.properties[argv.k]] = [];
+                    }
+                    geographyCache[data.properties[argv.k]].push(data);
+                }
+            }
+            else {
+                if (geometryCount < argv.l) {
+                    geometries.push(data);
+                    geometryCount++;
+                } else {
+                    outputGeoJSON(geometries, file, fileCount);
+                    fileCount++;
+                    geometries = [data];
+                    geometryCount = 0;
+                }
             }
         }
     );
@@ -140,7 +173,17 @@ function inputGeoJSON(filename) {
 }
 
 function outputGeoJSON(geometries, file, fileCount) {
-    filename = file.name + "_x" + pad(fileCount, argv.a) + ".geojson";
+    var filename = "";
+    if (fileCount > 0) {
+        filename = file.name + "_x" + pad(fileCount, argv.a) + ".geojson";
+    }
+    else {
+        filename = file.name + ".geojson";
+    } 
+
+    if (argv.o) {
+        filename = argv.o + '/' + filename;
+    }
     
     outputGeoJSONContent = {
         "type": "FeatureCollection",
