@@ -26,5 +26,5 @@ $ geojsplit --help
       -l, --geometry-count    number of geometries per split file
       --help, -h              display this message
       -v, --verbose           verbose output
-      -k, --key		      key to use to split Features into files (state ID, for example)
+      -k, --key               key to use to split Features into files (state ID, for example)
       -o, --output-directory  put files into this dir
