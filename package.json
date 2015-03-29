@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "JSONStream": "0.7",
-    "lodash": "^3.6.0",
     "optimist": "0.3"
   },
   "bin": {

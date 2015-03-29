@@ -47,8 +47,7 @@ var _version = "0.0.2",
 var fs = require("fs"),
     opt = require("optimist"),
     path = require("path"),
-    jss = require("JSONStream"),
-    _   = require("lodash");
+    jss = require("JSONStream");
 
 var argv = opt
     .usage("Usage: geojsplit [-a suffix_length] [-l geometry_count] filename\n\n"
@@ -129,17 +128,6 @@ function inputGeoJSON(filename) {
     var stream = fs.createReadStream(file.path, {flags: "r", encoding: "utf8"}),
         jsonStream = jss.parse("features.*");
 
-    if (argv.k) {
-        // set up end stream handler to write out the files
-        jsonStream.on('end', function () {
-            _.each(geographyCache, function (v, k) {
-                outputGeoJSON(v, {
-                    name: k
-                }, 0);
-            });
-        });
-    }
-
     var fileCount = 0,
         geometries = [],
         geometryCount = 0;
@@ -167,7 +155,17 @@ function inputGeoJSON(filename) {
                 }
             }
         }
-    );
+    )
+    .on('end', function () {
+        // set up end stream handler to write out the files
+        if (argv.k) {
+            for (var k in geographyCache) {
+                if (geographyCache.hasOwnProperty(k)) {
+                    outputGeoJSON(geographyCache[k], { name: k }, 0);
+                }
+            }
+        }
+    });
 
     stream.pipe(jsonStream);
 }
