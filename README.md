@@ -15,7 +15,7 @@ $ geojsplit --help
 
     Usage: geojsplit [-a suffix_length] [-l geometry_count] filename
 
-    Version: 0.0.2
+    Version: 0.1.0
 
     Similar to UNIX split, geojsplit splits up a GeoJSON file into smaller
     GeoJSON files. Unlike UNIX split, files cannot simply be concatonated
