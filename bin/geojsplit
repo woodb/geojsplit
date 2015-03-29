@@ -50,11 +50,12 @@ var fs = require("fs"),
     jss = require("JSONStream");
 
 var argv = opt
-    .usage("Usage: geojsplit [-a suffix_length] [-l geometry_count] filename\n\n"
-        + "Version: " + _version + "\n\n"
-        + "Similar to UNIX split, geojsplit splits up a GeoJSON file into smaller\n"
-        + "GeoJSON files. Unlike UNIX split, files cannot simply be concatonated\n"
-        + "back again.")
+    .usage(
+        "Usage: geojsplit [-a suffix_length] [-l geometry_count] filename\n\n" +
+        "Version: " + _version + "\n\n" +
+        "Similar to UNIX split, geojsplit splits up a GeoJSON file into smaller\n" +
+        "GeoJSON files. Unlike UNIX split, files cannot simply be concatonated\n" +
+        "back again.")
     .options("a", {
         alias: "suffix-length",
         describe: "number of characters in the suffix length for split file names",
@@ -87,13 +88,16 @@ var argv = opt
         describe: "split by key [property name properties]",
         type: "string"
     })
-    .check(function(argv) {
+    .check(function (argv) {
         if (!!argv.help) return;
         if (!argv._.length) throw new Error("input GeoJSON file required");
     })
     .argv;
 
-if (argv.help) return opt.showHelp();
+
+if (argv.help) 
+    return opt.showHelp();
+
 
 function pad(n, width) {
     var alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
@@ -101,7 +105,8 @@ function pad(n, width) {
     if (n >= Math.pow(alphabet.length, width))
         throw new Error("not enough suffix length, try increasing it");
 
-    var ns = [], np, ni;
+    var ns = [],
+        np, ni;
 
     while (width-- > 0) {
         np = Math.pow(alphabet.length, width);
@@ -109,14 +114,15 @@ function pad(n, width) {
         n -= ni * np;
         ns.push(alphabet[ni]);
     }
-    
+
     return ns.join("");
 }
 
 function qualify(file) {
     var i = file.indexOf("=");
     return {
-        name: i >= 0 ? file.substring(0, i) : path.basename(file, path.extname(file)),
+        name: i >= 0 ? file.substring(0, i) : path.basename(file, path.extname(
+            file)),
         path: i >= 0 ? file.substring(i + 1) : file
     };
 }
@@ -125,7 +131,10 @@ function inputGeoJSON(filename) {
     var file = qualify(filename);
     var geographyCache = {};
 
-    var stream = fs.createReadStream(file.path, {flags: "r", encoding: "utf8"}),
+    var stream = fs.createReadStream(file.path, {
+            flags: "r",
+            encoding: "utf8"
+        }),
         jsonStream = jss.parse("features.*");
 
     var fileCount = 0,
@@ -133,39 +142,41 @@ function inputGeoJSON(filename) {
         geometryCount = 0;
 
     /* stream handler, parser, splitter */
-    jsonStream.on('data', 
-        function(data) {
-            if (argv.k) {
-                if (data && data.properties && data.properties[argv.k]) {
-                    if (!geographyCache[data.properties[argv.k]]) {
-                        geographyCache[data.properties[argv.k]] = [];
+    jsonStream.on('data',
+            function (data) {
+                if (argv.k) {
+                    if (data && data.properties && data.properties[argv.k]) {
+                        if (!geographyCache[data.properties[argv.k]]) {
+                            geographyCache[data.properties[argv.k]] = [];
+                        }
+                        geographyCache[data.properties[argv.k]].push(data);
                     }
-                    geographyCache[data.properties[argv.k]].push(data);
-                }
-            }
-            else {
-                if (geometryCount < argv.l) {
-                    geometries.push(data);
-                    geometryCount++;
                 } else {
-                    outputGeoJSON(geometries, file, fileCount);
-                    fileCount++;
-                    geometries = [data];
-                    geometryCount = 0;
+                    if (geometryCount < argv.l) {
+                        geometries.push(data);
+                        geometryCount++;
+                    } else {
+                        outputGeoJSON(geometries, file, fileCount);
+                        fileCount++;
+                        geometries = [data];
+                        geometryCount = 0;
+                    }
                 }
             }
-        }
-    )
-    .on('end', function () {
-        // set up end stream handler to write out the files
-        if (argv.k) {
-            for (var k in geographyCache) {
-                if (geographyCache.hasOwnProperty(k)) {
-                    outputGeoJSON(geographyCache[k], { name: k }, 0);
+        )
+        .on('end',
+            function () {
+                // set up end stream handler to write out the files
+                if (argv.k) {
+                    for (var k in geographyCache) {
+                        if (geographyCache.hasOwnProperty(k)) {
+                            outputGeoJSON(geographyCache[k], {
+                                name: k
+                            }, 0);
+                        }
+                    }
                 }
-            }
-        }
-    });
+            });
 
     stream.pipe(jsonStream);
 }
@@ -176,22 +187,23 @@ function outputGeoJSON(geometries, file, fileCount) {
     if (argv.o) {
         filename = argv.o + '/' + filename;
     }
-    
+
     outputGeoJSONContent = {
         "type": "FeatureCollection",
         "features": geometries
     }
 
-    fs.writeFile(filename, JSON.stringify(outputGeoJSONContent, "utf8"), 
-        function(err) {
-            if (err) throw new Error("error writing " + filename + ", " + err);
+    fs.writeFile(filename, JSON.stringify(outputGeoJSONContent, "utf8"),
+        function (err) {
+            if (err) throw new Error("error writing " + filename + ", " +
+                err);
             else if (!!argv.v) console.log("wrote file " + filename);
         }
     );
 }
 
 /* parse files given */
-argv._.forEach(function(filename) {
-    if(!!argv.v) console.log("parsing file " + filename);
+argv._.forEach(function (filename) {
+    if (!!argv.v) console.log("parsing file " + filename);
     inputGeoJSON(filename);
 });
