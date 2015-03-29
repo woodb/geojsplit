@@ -1,22 +1,29 @@
 {
-    "name": "geojsplit",
-    "version": "0.0.2",
-    "description": "Splits GeoJSON FeatureCollections to smaller files",
-    "license": "BSD",
-    "author": {
-        "name": "Brandon Wood",
-        "email": "btwood@geometeor.com",
-        "url": "http://geometeor.com"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/geometeor/geojsplit.git"
-    },
-    "dependencies": {
-        "optimist": "0.3",
-        "JSONStream": "0.7"
-    },
-    "bin": {
-        "geojsplit": "./bin/geojsplit"
+  "name": "geojsplit",
+  "version": "0.1.0",
+  "description": "Splits GeoJSON FeatureCollections to smaller files",
+  "license": "BSD",
+  "author": {
+    "name": "Brandon Wood",
+    "email": "btwood@geometeor.com",
+    "url": "http://geometeor.com"
+  },
+  "contributors": [
+    {
+      "name": "Anatoly Geyfman",
+      "email": "anatoly@geyfman.net",
+      "url": "http://www.geyfman.net/"
     }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/geometeor/geojsplit.git"
+  },
+  "dependencies": {
+    "JSONStream": "0.7",
+    "optimist": "0.3"
+  },
+  "bin": {
+    "geojsplit": "./bin/geojsplit"
+  }
 }
