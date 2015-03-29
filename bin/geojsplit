@@ -185,6 +185,8 @@ function outputGeoJSON(geometries, file, fileCount) {
     var filename = file.name + "_x" + pad(fileCount, argv.a) + ".geojson";
 
     if (argv.o) {
+        if (!fs.existsSync(argv.o))
+            fs.mkdirSync(argv.o);
         filename = argv.o + '/' + filename;
     }
 
