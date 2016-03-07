@@ -17,7 +17,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/geometeor/geojsplit.git"
+    "url": "https://github.com/woodb/geojsplit.git"
   },
   "dependencies": {
     "JSONStream": "0.7",
