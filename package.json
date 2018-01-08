@@ -1,6 +1,6 @@
 {
   "name": "geojsplit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Splits GeoJSON FeatureCollections to smaller files",
   "license": "BSD",
   "author": {
