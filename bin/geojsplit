@@ -215,6 +215,8 @@ function inputGeoJSON(filename) {
                             }, 0);
                         }
                     }
+                } else {
+                    outputGeoJSON(geometries, file, fileCount);
                 }
             });
 
