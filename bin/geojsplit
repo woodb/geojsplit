@@ -178,7 +178,6 @@ function inputGeoJSON(filename) {
 
     var fileCount = 0,
         geometries = [],
-        geometryCount = 0,
         geographyCache = {};
 
     /* stream handler, parser, splitter */
@@ -192,14 +191,12 @@ function inputGeoJSON(filename) {
                         geographyCache[data.properties[argv.k]].push(data);
                     }
                 } else {
-                    if (geometryCount < argv.l) {
+                    if (geometries.length < argv.l) {
                         geometries.push(data);
-                        geometryCount++;
                     } else {
                         outputGeoJSON(geometries, file, fileCount);
                         fileCount++;
                         geometries = [data];
-                        geometryCount = 0;
                     }
                 }
             }
